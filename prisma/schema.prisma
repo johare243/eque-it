@@ -1,0 +1,217 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// ───────── ENUMS ─────────
+enum Role {
+  ADMIN
+  CLIENT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum Category {
+  GENERAL
+  SALESFORCE
+  NETWORKING
+  HARDWARE
+  SOFTWARE
+}
+
+/// ───────── MODELS ─────────
+model Account {
+  id       Int     @id @default(autoincrement())
+  name     String  @unique
+  phone    String?
+  timezone String?
+  currency String  @default("USD")
+
+  users     User[]     @relation("AccountUsers")
+  contracts Contract[]
+  tickets   Ticket[]
+  invoices  Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model User {
+  id           Int     @id @default(autoincrement())
+  email        String  @unique
+  name         String?
+  title        String?
+  phone        String?
+  passwordHash String
+  role         Role    @default(CLIENT)
+  isStaff      Boolean @default(false)
+
+  accountId Int
+  account   Account @relation("AccountUsers", fields: [accountId], references: [id])
+
+  // Audit relations
+  createdContracts Contract[]  @relation("ContractCreatedBy")
+  createdTickets   Ticket[]    @relation("TicketCreatedBy")
+  updatedTickets   Ticket[]    @relation("TicketUpdatedBy")
+  createdInvoices  Invoice[]   @relation("InvoiceCreatedBy")
+  updatedInvoices  Invoice[]   @relation("InvoiceUpdatedBy")
+  timeEntries      TimeEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  Ticket    Ticket[]
+
+  @@index([accountId])
+}
+
+model Contract {
+  id              Int       @id @default(autoincrement())
+  name            String
+  accountId       Int
+  account         Account   @relation(fields: [accountId], references: [id])
+  startDate       DateTime  @default(now())
+  endDate         DateTime? @default(now())
+  frequency       String
+  hourlyRateCents Int
+  includedHours   Int?
+  autoRenew       Boolean   @default(false)
+
+  createdById Int
+  createdBy   User @relation("ContractCreatedBy", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([accountId])
+}
+
+model Ticket {
+  id          Int          @id @default(autoincrement())
+  title       String
+  description String?
+  category    Category     @default(GENERAL)
+  priority    Priority     @default(MEDIUM)
+  status      TicketStatus @default(OPEN)
+
+  assignedToId Int?
+  assignedTo   User? @relation(fields: [assignedToId], references: [id])
+
+  dueDate        DateTime? @default(now())
+  estimatedHours Float?
+  actualHours    Float?
+  recurring      Boolean   @default(false)
+  scheduleCron   String?
+  resolution     String?
+  resolvedAt     DateTime? @default(now())
+
+  accountId Int
+  account   Account @relation(fields: [accountId], references: [id])
+
+  createdById Int
+  createdBy   User @relation("TicketCreatedBy", fields: [createdById], references: [id])
+
+  updatedById Int?
+  updatedBy   User? @relation("TicketUpdatedBy", fields: [updatedById], references: [id])
+
+  timeEntries TimeEntry[]
+  attachments Attachment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([accountId])
+  @@index([status])
+  @@index([assignedToId])
+}
+
+model Invoice {
+  id            Int           @id @default(autoincrement())
+  pdfUrl        String
+  amountCents   Int
+  status        InvoiceStatus @default(DRAFT)
+  dueDate       DateTime      @default(now())
+  paidDate      DateTime?
+  paymentTerms  String?
+  paymentMethod String?
+
+  accountId Int
+  account   Account @relation(fields: [accountId], references: [id])
+
+  lineItems   LineItem[]
+  attachments Attachment[]
+
+  createdById Int
+  createdBy   User @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
+
+  updatedById Int?
+  updatedBy   User? @relation("InvoiceUpdatedBy", fields: [updatedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([accountId])
+  @@index([status])
+}
+
+model LineItem {
+  id          Int     @id @default(autoincrement())
+  invoiceId   Int
+  invoice     Invoice @relation(fields: [invoiceId], references: [id])
+  description String
+  quantity    Float   @default(1)
+  unitPrice   Int
+  totalCents  Int     @default(0)
+
+  @@index([invoiceId])
+}
+
+model TimeEntry {
+  id          Int      @id @default(autoincrement())
+  ticketId    Int
+  ticket      Ticket   @relation(fields: [ticketId], references: [id])
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  startTime   DateTime @default(now())
+  endTime     DateTime @default(now())
+  description String?
+  hours       Float    @default(0)
+
+  @@index([ticketId])
+  @@index([userId])
+}
+
+model Attachment {
+  id        Int      @id @default(autoincrement())
+  url       String
+  filename  String
+  ticketId  Int?
+  ticket    Ticket?  @relation(fields: [ticketId], references: [id])
+  invoiceId Int?
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@index([invoiceId])
+}
