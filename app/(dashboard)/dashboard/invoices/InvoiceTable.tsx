@@ -24,7 +24,7 @@ export default async function InvoiceTable() {
               className={i % 2 ? "bg-gray-50 dark:bg-gray-900/30" : ""}
             >
               <td className="p-3">{fmtMoney(inv.amountCents)}</td>
-              <td className="p-3">{inv.paid ? "Yes" : "No"}</td>
+              <td className="p-3">{inv.status}</td>
               <td className="p-3">{fmtDate(inv.createdAt)}</td>
               <td className="p-3">{inv.pdfUrl}</td>
             </tr>

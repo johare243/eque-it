@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import InvoiceTable from "./InvoiceTable";
 import SkeletonTable from "@/components/SkeletonTable";
 
-export default function TicketsPage() {
+export default function InvoicePage() {
   return (
     <main>
       <h1 className="text-2xl font-bold mb-6">Invoices</h1>

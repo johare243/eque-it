@@ -79,24 +79,26 @@ model User {
   updatedInvoices  Invoice[]   @relation("InvoiceUpdatedBy")
   timeEntries      TimeEntry[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
   Ticket    Ticket[]
+  settings  Settings?
 
   @@index([accountId])
 }
 
 model Contract {
-  id              Int       @id @default(autoincrement())
+  id              Int          @id @default(autoincrement())
   name            String
   accountId       Int
-  account         Account   @relation(fields: [accountId], references: [id])
-  startDate       DateTime  @default(now())
-  endDate         DateTime? @default(now())
+  account         Account      @relation(fields: [accountId], references: [id])
+  startDate       DateTime     @default(now())
+  endDate         DateTime?    @default(now())
   frequency       String
   hourlyRateCents Int
   includedHours   Int?
-  autoRenew       Boolean   @default(false)
+  autoRenew       Boolean      @default(false)
+  attachments     Attachment[]
 
   createdById Int
   createdBy   User @relation("ContractCreatedBy", fields: [createdById], references: [id])
@@ -203,15 +205,26 @@ model TimeEntry {
 }
 
 model Attachment {
-  id        Int      @id @default(autoincrement())
-  url       String
-  filename  String
-  ticketId  Int?
-  ticket    Ticket?  @relation(fields: [ticketId], references: [id])
-  invoiceId Int?
-  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
-  createdAt DateTime @default(now())
+  id         Int       @id @default(autoincrement())
+  url        String
+  filename   String
+  ticketId   Int?
+  ticket     Ticket?   @relation(fields: [ticketId], references: [id])
+  invoiceId  Int?
+  invoice    Invoice?  @relation(fields: [invoiceId], references: [id])
+  contractId Int?
+  contract   Contract? @relation(fields: [contractId], references: [id])
+  createdAt  DateTime  @default(now())
 
   @@index([ticketId])
   @@index([invoiceId])
+}
+
+model Settings {
+  userId      Int      @id
+  user        User     @relation(fields: [userId], references: [id])
+  preferences Json     @default("{}")
+  theme       String   @default("dark")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 }
