@@ -7,9 +7,10 @@ import {
   createUser,
   deleteSession,
 } from '@/lib/auth';
-//import { getUserByEmail } from '@/lib/dal';
+import { getUserByEmail } from '@/lib/dal';
 import { mockDelay } from '@/lib/utils';
 import { redirect } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
 
 // Define Zod schema for signin validation
 const SignInSchema = z.object({
@@ -62,6 +63,9 @@ export async function signIn(formData: FormData): Promise<ActionResponse> {
 
     // Find user by email
     const user = await getUserByEmail(data.email)
+    //const user = await prisma.user.findUnique({
+     // where: { email: data.email },
+    //});
     if (!user) {
       return {
         success: false,
@@ -124,7 +128,10 @@ export async function signUp(formData: FormData): Promise<ActionResponse> {
     }
 
     // Check if user already exists
-    const existingUser = await getUserByEmail(data.email)
+    //const existingUser = await getUserByEmail(data.email)
+    const existingUser = await prisma.user.findUnique({
+      where: { email: data.email },
+    });
     if (existingUser) {
       return {
         success: false,
@@ -137,6 +144,12 @@ export async function signUp(formData: FormData): Promise<ActionResponse> {
 
     // Create new user
     const user = await createUser(data.email, data.password)
+    //const user = await prisma.user.create({
+     // data: {
+      //  email: data.email,
+       // password: hashed,
+     // }
+    //});
     if (!user) {
       return {
         success: false,
