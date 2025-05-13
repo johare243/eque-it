@@ -1,5 +1,8 @@
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('ADMIN', 'CONSULTANT', 'CLIENT');
+CREATE TYPE "SubscriptionStatus" AS ENUM ('ACTIVE', 'PAST_DUE', 'CANCELED');
+
+-- CreateEnum
+CREATE TYPE "Role" AS ENUM ('ADMIN', 'CONSULTANT', 'CLIENT', 'USER');
 
 -- CreateEnum
 CREATE TYPE "IssueStatus" AS ENUM ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED');
@@ -9,6 +12,8 @@ CREATE TABLE "Client" (
     "id" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "stripeCustomerId" TEXT NOT NULL,
+    "SubscriptionStatus" "SubscriptionStatus" NOT NULL DEFAULT 'ACTIVE',
     "domain" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -31,8 +36,9 @@ CREATE TABLE "Project" (
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
     "name" TEXT,
-    "role" "Role" NOT NULL DEFAULT 'CLIENT',
+    "role" "Role" NOT NULL DEFAULT 'USER',
     "clientId" TEXT,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
@@ -66,6 +72,9 @@ CREATE TABLE "Issue" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Client_slug_key" ON "Client"("slug");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Client_stripeCustomerId_key" ON "Client"("stripeCustomerId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");

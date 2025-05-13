@@ -1,10 +1,9 @@
-//import { getCurrentUser } from '@/lib/dal';
+import { getCurrentUser } from '@/lib/dal';
 import { UserIcon } from 'lucide-react';
-//import SignOutButton from './SignOutButton';
+import SignOutButton from './SignOutButton';
 
 const UserEmail = async () => {
-  //const user = await getCurrentUser()
-  const user = {email: 'test@gmail.com'}
+  const user = await getCurrentUser()
 
   return (
     <div className="space-y-1">
@@ -14,6 +13,7 @@ const UserEmail = async () => {
           {user?.email}
         </span>
       </div>
+      <SignOutButton />
     </div>
   )
 };

@@ -14,50 +14,59 @@ datasource db {
 }
 
 model Client {
-  id        String       @id @default(cuid())
-  slug      String       @unique
-  name      String
-  domain    String?      // optional custom domain
-  createdAt DateTime     @default(now())
-  projects  Project[]
-  users     User[]       // internal consultants & client contacts
-  issues    Issue[]      // client‑submitted tickets
+  id                 String             @id @default(cuid())
+  slug               String             @unique
+  name               String
+  stripeCustomerId   String             @unique
+  subscriptionStatus SubscriptionStatus @default(ACTIVE)
+  domain             String? // optional custom domain
+  createdAt          DateTime           @default(now())
+  projects           Project[]
+  users              User[] // internal consultants & client contacts
+  issues             Issue[] // client‑submitted tickets
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
 }
 
 model Project {
-  id          String       @id @default(cuid())
-  client      Client       @relation(fields: [clientId], references: [id])
+  id          String      @id @default(cuid())
+  client      Client      @relation(fields: [clientId], references: [id])
   clientId    String
   title       String
   description String
   startDate   DateTime
   endDate     DateTime?
-  timeEntries TimeEntry[]  // logged by consultants only
+  timeEntries TimeEntry[] // logged by consultants only
 }
 
 model User {
-  id        String       @id @default(cuid())
-  email     String       @unique
-  password  String
-  name      String?
-  role      Role         @default(CLIENT)
-  client    Client?      @relation(fields: [clientId], references: [id])
-  clientId  String?
-  entries   TimeEntry[]  // for CONSULTANT role
-  issues    Issue[]      // client contacts can submit issues
+  id       String      @id @default(cuid())
+  email    String      @unique
+  password String
+  name     String?
+  role     Role        @default(USER)
+  client   Client?     @relation(fields: [clientId], references: [id])
+  clientId String?
+  entries  TimeEntry[] // for CONSULTANT role
+  issues   Issue[]     @relation("createdBy") // client contacts can submit issues
 }
 
 enum Role {
-  ADMIN       // manage all
-  CONSULTANT  // log time, manage projects
-  CLIENT      // view projects, submit issues
+  ADMIN // manage all
+  CONSULTANT // log time, manage projects
+  CLIENT // view projects, submit issues
+  USER
 }
 
 model TimeEntry {
-  id          String    @id @default(cuid())
-  project     Project   @relation(fields: [projectId], references: [id])
+  id          String   @id @default(cuid())
+  project     Project  @relation(fields: [projectId], references: [id])
   projectId   String
-  user        User      @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
   userId      String
   date        DateTime
   hours       Float
@@ -65,16 +74,17 @@ model TimeEntry {
 }
 
 model Issue {
-  id          String     @id @default(cuid())
-  client      Client     @relation(fields: [clientId], references: [id])
+  id          String        @id @default(cuid())
+  client      Client        @relation(fields: [clientId], references: [id])
   clientId    String
-  createdBy   User       @relation(fields: [userId], references: [id])
+  createdBy   User          @relation("createdBy", fields: [userId], references: [id])
   userId      String
   title       String
   description String
-  status      IssueStatus @default(OPEN)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  status      IssueStatus   @default(OPEN)
+  priority    IssuePriority @default(MEDIUM)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
 enum IssueStatus {
@@ -82,4 +92,10 @@ enum IssueStatus {
   IN_PROGRESS
   RESOLVED
   CLOSED
+}
+
+enum IssuePriority {
+  LOW
+  MEDIUM
+  HIGH
 }
